@@ -48,24 +48,25 @@ connect_db(app)
 @app.before_request
 def add_user_to_g():
     """If we're logged in, add curr user to Flask global."""
-    g.csrf_form = BlankForm()
 
     if CURR_USER_KEY in session:
         g.user = User.query.get(session[CURR_USER_KEY])
-
     else:
         g.user = None
+
+@app.before_request
+def add_csrf():
+    g.csrf_form = BlankForm()
+
 
 
 def do_login(user):
     """Log in user."""
-
     session[CURR_USER_KEY] = user.id
 
 
 def do_logout():
     """Log out user."""
-
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
 
@@ -134,6 +135,7 @@ def login():
 @app.post('/logout')
 def logout():
     """Handle logout of user and redirect to homepage."""
+    #FIXME: check for a user being logged in.
 
     form = g.csrf_form
 
@@ -143,8 +145,7 @@ def logout():
         return redirect('/')
     else:
         raise Unauthorized()
-    # IMPLEMENT THIS AND FIX BUG
-    # DO NOT CHANGE METHOD ON ROUTE
+
 
 
 ##############################################################################
@@ -221,16 +222,24 @@ def start_following(follow_id):
 
     Redirect to following page for the current for the current user.
     """
+    form = g.csrf_form
+
+
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    followed_user = User.query.get_or_404(follow_id)
-    g.user.following.append(followed_user)
-    db.session.commit()
+    if form.validate_on_submit():
+        followed_user = User.query.get_or_404(follow_id)
+        g.user.following.append(followed_user)
+        db.session.commit()
 
-    return redirect(f"/users/{g.user.id}/following")
+        return redirect(f"/users/{g.user.id}/following")
+
+    else:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
 
 @app.post('/users/stop-following/<int:follow_id>')
@@ -244,17 +253,22 @@ def stop_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    followed_user = User.query.get_or_404(follow_id)
-    g.user.following.remove(followed_user)
-    db.session.commit()
+    form = g.csrf_form
 
-    return redirect(f"/users/{g.user.id}/following")
+    if form.validate_on_submit():
+        followed_user = User.query.get_or_404(follow_id)
+        g.user.following.remove(followed_user)
+        db.session.commit()
+
+        return redirect(f"/users/{g.user.id}/following")
+    else:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
 def profile():
     """Update profile for current user."""
-
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -274,9 +288,9 @@ def profile():
             db.session.commit()
             return redirect(f'/users/{g.user.id}')
         else:
-            return render_template('users/edit.html', form=form)
+            return render_template('users/edit.html', user=g.user, form=form)
 
-    return render_template('users/edit.html', form=form)
+    return render_template('users/edit.html', user=g.user, form=form)
 
 @app.post('/users/delete')
 def delete_user():
@@ -285,17 +299,22 @@ def delete_user():
     Redirect to signup page.
     """
 
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    do_logout()
+    form = g.csrf_form
 
-    db.session.delete(g.user)
-    db.session.commit()
+    if form.validate_on_submit():
+        do_logout()
+        db.session.delete(g.user)
+        db.session.commit()
 
-    return redirect("/signup")
+        return redirect("/signup")
+    else:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
 
 
 ##############################################################################
@@ -346,15 +365,23 @@ def delete_message(message_id):
     Redirect to user page on success.
     """
 
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get_or_404(message_id)
-    db.session.delete(msg)
-    db.session.commit()
+    form = g.csrf_form
 
-    return redirect(f"/users/{g.user.id}")
+    if form.validate_on_submit():
+        msg = Message.query.get_or_404(message_id)
+        db.session.delete(msg)
+        db.session.commit()
+
+        return redirect(f"/users/{g.user.id}")
+    else:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
 
 
 ##############################################################################
@@ -394,3 +421,9 @@ def add_header(response):
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
     response.cache_control.no_store = True
     return response
+
+
+
+
+##############################################################################
+# Messages routes:

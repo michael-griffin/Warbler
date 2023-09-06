@@ -8,7 +8,7 @@ from werkzeug.exceptions import Unauthorized
 
 
 from forms import UserAddForm, LoginForm, MessageForm, EditProfileForm, BlankForm
-from models import db, connect_db, User, Message, DEFAULT_HEADER_IMAGE_URL, DEFAULT_IMAGE_URL
+from models import db, connect_db, User, Message, Like, DEFAULT_HEADER_IMAGE_URL, DEFAULT_IMAGE_URL
 
 load_dotenv()
 
@@ -20,7 +20,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
-toolbar = DebugToolbarExtension(app)
+#toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
 
@@ -54,10 +54,19 @@ def add_user_to_g():
     else:
         g.user = None
 
+
 @app.before_request
 def add_csrf():
     g.csrf_form = BlankForm()
 
+
+@app.before_request
+def check_url():
+    possible_url = request.url
+    possible_path = request.path
+
+    print(f'\n\n\n\n\n url is {possible_url} \n\n path is {possible_path}')
+    g.csrf_form = BlankForm()
 
 
 def do_login(user):
@@ -348,7 +357,10 @@ def show_message(message_id):
         return redirect("/")
 
     msg = Message.query.get_or_404(message_id)
-    return render_template('messages/show.html', message=msg, form=form)
+
+    like = Like.query.get((message_id, g.user.id))
+
+    return render_template('messages/show.html', like=like, message=msg, form=form)
 
 
 
@@ -401,7 +413,15 @@ def homepage():
 
 
         form = g.csrf_form
-        return render_template('home.html', messages=messages, form=form)
+
+        liked_message_ids = [ message.id for message in g.user.liked_messages]
+
+        print(f'\n\n\n liked_message_ids {liked_message_ids}')
+
+        return render_template('home.html',
+                               liked_message_ids = liked_message_ids,
+                               user=g.user,
+                               messages=messages, form=form)
 
     else:
         return render_template('home-anon.html')
@@ -419,4 +439,26 @@ def add_header(response):
 
 
 ##############################################################################
-# Messages routes:
+# Like routes:
+
+@app.post('/toggle-like/<int:msg_id>')
+def toggle_like(msg_id):
+
+    form = g.csrf_form
+
+    if not g.user or not form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect('/')
+
+
+    like = Like.query.get((msg_id, g.user.id))
+
+    if like:
+        like.query.delete()
+        db.session.commit()
+    else:
+        like = Like.create_like(user_id = g.user.id, message_id= msg_id)
+        db.session.commit()
+
+    return redirect(f'/messages/{msg_id}')
+

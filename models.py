@@ -207,8 +207,7 @@ class Like(db.Model):
     def create_like(cls, user_id, message_id):
         """Create liked message for user"""
 
-        like = Like(user_id, message_id)
-
+        like = cls(user_id=user_id, message_id=message_id)
         db.session.add(like)
 
         return like

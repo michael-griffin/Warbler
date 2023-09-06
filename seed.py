@@ -2,7 +2,7 @@
 
 from csv import DictReader
 from app import db
-from models import User, Message, Follow
+from models import User, Message, Follow, Like
 
 db.drop_all()
 db.create_all()
@@ -15,5 +15,10 @@ with open('generator/messages.csv') as messages:
 
 with open('generator/follows.csv') as follows:
     db.session.bulk_insert_mappings(Follow, DictReader(follows))
+
+db.session.commit()
+
+like1 = Like.create_like(2, 322) #political red message by rgeorge
+like2 = Like.create_like(2, 200) #former hospital message by john05
 
 db.session.commit()

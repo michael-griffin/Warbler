@@ -4,8 +4,10 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
+from werkzeug.exceptions import Unauthorized
 
-from forms import UserAddForm, LoginForm, MessageForm
+
+from forms import UserAddForm, LoginForm, MessageForm, BlankForm
 from models import db, connect_db, User, Message
 
 load_dotenv()
@@ -23,8 +25,24 @@ toolbar = DebugToolbarExtension(app)
 connect_db(app)
 
 
+
+def get_csrf_form():
+    if 'csrf_form' not in g:
+        g.csrf_form = BlankForm()
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    csrf_form = g.pop('csrf_form', None)
+
+    # if csrf_form is not None:
+    #     csrf_form.close()
+
+# get_csrf_form()
+
 ##############################################################################
 # User signup/login/logout
+
+# g.csrf_form = get_csrf_form()
 
 
 @app.before_request
@@ -49,6 +67,7 @@ def do_logout():
 
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
+
 
 
 @app.route('/signup', methods=["GET", "POST"])
@@ -114,9 +133,16 @@ def login():
 @app.post('/logout')
 def logout():
     """Handle logout of user and redirect to homepage."""
+    get_csrf_form()
 
     form = g.csrf_form
 
+    if form.validate_on_submit():
+        do_logout() #this erases user from session
+        flash(message='Logout Successful', category="success")
+        return redirect('/')
+    else:
+        raise Unauthorized()
     # IMPLEMENT THIS AND FIX BUG
     # DO NOT CHANGE METHOD ON ROUTE
 
@@ -320,7 +346,9 @@ def homepage():
                     .limit(100)
                     .all())
 
-        return render_template('home.html', messages=messages)
+        get_csrf_form()
+        form = g.csrf_form
+        return render_template('home.html', messages=messages, form=form)
 
     else:
         return render_template('home-anon.html')

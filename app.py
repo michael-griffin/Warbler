@@ -8,7 +8,7 @@ from werkzeug.exceptions import Unauthorized
 
 
 from forms import UserAddForm, LoginForm, MessageForm, EditProfileForm, BlankForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, DEFAULT_HEADER_IMAGE_URL, DEFAULT_IMAGE_URL
 
 load_dotenv()
 
@@ -113,6 +113,8 @@ def signup():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     """Handle user login and redirect to homepage on success."""
+    if g.user:
+        redirect('/')
 
     form = LoginForm()
 
@@ -135,16 +137,16 @@ def login():
 @app.post('/logout')
 def logout():
     """Handle logout of user and redirect to homepage."""
-    #FIXME: check for a user being logged in.
 
     form = g.csrf_form
 
-    if form.validate_on_submit():
-        do_logout() #this erases user from session
-        flash(message='Logout Successful', category="success")
-        return redirect('/')
-    else:
+    if not g.user or not form.validate_on_submit():
         raise Unauthorized()
+
+    do_logout() #this erases user from session
+    flash(message='Logout Successful', category="success")
+    return redirect('/')
+
 
 
 
@@ -224,22 +226,16 @@ def start_following(follow_id):
     """
     form = g.csrf_form
 
-
-
-    if not g.user:
+    if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    if form.validate_on_submit():
-        followed_user = User.query.get_or_404(follow_id)
-        g.user.following.append(followed_user)
-        db.session.commit()
+    followed_user = User.query.get_or_404(follow_id)
+    g.user.following.append(followed_user)
+    db.session.commit()
 
-        return redirect(f"/users/{g.user.id}/following")
+    return redirect(f"/users/{g.user.id}/following")
 
-    else:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
 
 @app.post('/users/stop-following/<int:follow_id>')
@@ -277,20 +273,22 @@ def profile():
     form = EditProfileForm(obj=g.user)
 
     if form.validate_on_submit():
-        #Update user and commit changes, check password with authentication
         if User.authenticate(g.user.username, form.password.data):
-            g.user.username = form.username.data
-            g.user.email = form.email.data
-            g.user.image_url = form.image_url.data
-            g.user.header_image_url = form.header_image_url.data
-            g.user.bio = form.bio.data
+            user = g.user
+            user.username = form.username.data
+            user.email = form.email.data
+            user.image_url = form.image_url.data or DEFAULT_IMAGE_URL
+            user.header_image_url = form.header_image_url.data or DEFAULT_HEADER_IMAGE_URL
+            user.bio = form.bio.data
 
             db.session.commit()
             return redirect(f'/users/{g.user.id}')
         else:
+            form.password.errors = ['Incorrect password']
             return render_template('users/edit.html', user=g.user, form=form)
 
     return render_template('users/edit.html', user=g.user, form=form)
+
 
 @app.post('/users/delete')
 def delete_user():
@@ -298,22 +296,18 @@ def delete_user():
 
     Redirect to signup page.
     """
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
-
     form = g.csrf_form
 
-    if form.validate_on_submit():
-        do_logout()
-        db.session.delete(g.user)
-        db.session.commit()
-
-        return redirect("/signup")
-    else:
+    if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
+
+    Message.query.filter_by(user_id=g.user.id).delete()
+    db.session.delete(g.user)
+    db.session.commit()
+    do_logout()
+    return redirect("/signup")
+
 
 
 
@@ -357,6 +351,8 @@ def show_message(message_id):
     return render_template('messages/show.html', message=msg, form=form)
 
 
+
+#TODO: once likes are implemented, may need to clear likes before clearing messages
 @app.post('/messages/<int:message_id>/delete')
 def delete_message(message_id):
     """Delete a message.
@@ -364,23 +360,20 @@ def delete_message(message_id):
     Check that this message was written by the current user.
     Redirect to user page on success.
     """
-
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
-
     form = g.csrf_form
 
-    if form.validate_on_submit():
-        msg = Message.query.get_or_404(message_id)
-        db.session.delete(msg)
-        db.session.commit()
-
-        return redirect(f"/users/{g.user.id}")
-    else:
+    if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
+
+    msg = Message.query.get_or_404(message_id)
+    if msg.user_id == g.user.id:
+        db.session.delete(msg)
+        db.session.commit()
+        flash('message deleted', "success")
+
+    return redirect(f"/users/{g.user.id}")
+
 
 
 

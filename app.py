@@ -26,13 +26,13 @@ connect_db(app)
 
 
 
-def get_csrf_form():
-    if 'csrf_form' not in g:
-        g.csrf_form = BlankForm()
+# def get_csrf_form():
+#     if 'csrf_form' not in g:
+#         g.csrf_form = BlankForm()
 
-@app.teardown_appcontext
-def teardown_db(exception):
-    csrf_form = g.pop('csrf_form', None)
+# @app.teardown_appcontext
+# def teardown_db(exception):
+#     csrf_form = g.pop('csrf_form', None)
 
     # if csrf_form is not None:
     #     csrf_form.close()
@@ -48,6 +48,7 @@ def teardown_db(exception):
 @app.before_request
 def add_user_to_g():
     """If we're logged in, add curr user to Flask global."""
+    g.csrf_form = BlankForm()
 
     if CURR_USER_KEY in session:
         g.user = User.query.get(session[CURR_USER_KEY])
@@ -133,7 +134,6 @@ def login():
 @app.post('/logout')
 def logout():
     """Handle logout of user and redirect to homepage."""
-    get_csrf_form()
 
     form = g.csrf_form
 
@@ -156,6 +156,7 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
+    form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -168,44 +169,50 @@ def list_users():
     else:
         users = User.query.filter(User.username.like(f"%{search}%")).all()
 
-    return render_template('users/index.html', users=users)
+    return render_template('users/index.html', users=users, form=form)
 
 
 @app.get('/users/<int:user_id>')
 def show_user(user_id):
     """Show user profile."""
 
+    form = g.csrf_form
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
-    return render_template('users/show.html', user=user)
+    return render_template('users/show.html', user=user, form=form)
 
 
 @app.get('/users/<int:user_id>/following')
 def show_following(user_id):
     """Show list of people this user is following."""
 
+    form = g.csrf_form
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
-    return render_template('users/following.html', user=user)
+    return render_template('users/following.html', user=user, form=form)
 
 
 @app.get('/users/<int:user_id>/followers')
 def show_followers(user_id):
     """Show list of followers of this user."""
 
+    form = g.csrf_form
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
-    return render_template('users/followers.html', user=user)
+    return render_template('users/followers.html', user=user, form=form)
 
 
 @app.post('/users/follow/<int:follow_id>')
@@ -258,6 +265,7 @@ def delete_user():
     Redirect to signup page.
     """
 
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -300,12 +308,14 @@ def add_message():
 def show_message(message_id):
     """Show a message."""
 
+    form = g.csrf_form
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     msg = Message.query.get_or_404(message_id)
-    return render_template('messages/show.html', message=msg)
+    return render_template('messages/show.html', message=msg, form=form)
 
 
 @app.post('/messages/<int:message_id>/delete')
@@ -346,7 +356,7 @@ def homepage():
                     .limit(100)
                     .all())
 
-        get_csrf_form()
+
         form = g.csrf_form
         return render_template('home.html', messages=messages, form=form)
 

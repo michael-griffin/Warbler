@@ -255,9 +255,7 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
-    """Update profile for current user."""
-    # IMPLEMENT THIS
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -372,8 +370,11 @@ def homepage():
     """
 
     if g.user:
+        following_ids = [u.id for u in g.user.following]
         messages = (Message
                     .query
+                    .filter((Message.user_id==g.user.id) |
+                            (Message.user_id.in_(following_ids)))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())

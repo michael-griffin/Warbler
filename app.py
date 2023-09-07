@@ -446,8 +446,10 @@ def add_header(response):
 ##############################################################################
 # Like routes:
 
+# TODO: message/msg-id/togglelike
 @app.post('/toggle-like/<int:msg_id>')
 def toggle_like(msg_id):
+    """Toggle a like for current message"""
 
     form = g.csrf_form
 
@@ -459,7 +461,8 @@ def toggle_like(msg_id):
     like = Like.query.get((msg_id, g.user.id))
 
     if like:
-        like.query.delete()
+        # like.query.delete()
+        db.session.delete(like)
         db.session.commit()
     else:
         like = Like.create_like(user_id = g.user.id, message_id= msg_id)

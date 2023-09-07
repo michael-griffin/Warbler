@@ -247,6 +247,31 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
 
+    def test_users_likes(self):
+        """Test likes list for user 2"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u2_id
+
+            resp = c.get(f'/users/{self.u2_id}/likes')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u2', html)
+            self.assertIn('@u1', html)
+            self.assertIn("m1-text", html)
+
+    def test_users_likes_logged_out(self):
+        """Test whether a logged out person can access likes list"""
+        with self.client as c:
+            resp = c.get(f'/users/{self.u2_id}/likes', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+            self.assertIn("New to Warbler?", html)
+
+
     def test_users_following(self):
         """Test following list """
         with self.client as c:
@@ -369,7 +394,7 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
-            self.assertIn("Edit your profile", html)
+            self.assertIn("Edit Your Profile", html)
             self.assertIn("u1", html)
 
     def test_update_user_info(self):

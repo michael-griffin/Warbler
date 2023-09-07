@@ -52,14 +52,16 @@ class MessageBaseViewTestCase(TestCase):
 
         m1 = Message(text="m1-text", user_id=u1.id)
         m2 = Message(text="test_text2", user_id=u1.id)
+        m3 = Message(text="test_text3", user_id=u2.id)
 
-        db.session.add_all([m1, m2])
+        db.session.add_all([m1, m2, m3])
         db.session.commit()
 
         self.u1_id = u1.id
         self.u2_id = u2.id
         self.m1_id = m1.id
         self.m2_id = m2.id
+        self.m3_id = m3.id
 
         like1 = Like.create_like(user_id = self.u2_id, message_id = self.m1_id)
         db.session.commit()
@@ -183,10 +185,39 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
 
 
 
-# class LikeViewTestCase(MessageBaseViewTestCase):
-#     def test_add_like(self):
-#         """Test liking another users' message"""
+class LikeViewTestCase(MessageBaseViewTestCase):
+    def test_toggle_like_on(self):
+        """Test liking another users' message"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
-#     def test_toggle_like_off(self):
-#         """Test removing a like from a message that was previously liked"""
-#         #like1 = Like.create_like(user_id = self.u2_id, message_id = self.m1_id)
+        # #user 1 likes m3 (by user 2)
+        # message = Message.query.get(self.m3_id)
+        # user = User.query.get(self.u1_id)
+        # message.users_like.append(user)
+
+        resp = c.post(f'/messages/{self.m3_id}/toggle-like', follow_redirects=True)
+        html = resp.get_data(as_text=True)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('star-fill', html)
+
+        message = Message.query.get(self.m3_id)
+        self.assertEqual(len(message.users_like), 1)
+
+    def test_toggle_like_off(self):
+        """Test removing a like from a message that was previously liked"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u2_id
+
+
+        resp = c.post(f'/messages/{self.m1_id}/toggle-like', follow_redirects=True)
+        html = resp.get_data(as_text=True)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("-star", html)
+
+        message = Message.query.get(self.m1_id)
+        self.assertEqual(len(message.users_like), 0)

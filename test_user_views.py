@@ -199,6 +199,7 @@ class UserAuthViewTestCase(UserBaseViewTestCase):
             self.assertEqual(resp.status_code, 401)
 
 
+
 class UserInfoViewTestCase(UserBaseViewTestCase):
     """Tests for general user routes"""
 
@@ -223,3 +224,137 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
+
+    def test_user_profile(self):
+        """Test display for profile on logged in user"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.get(f'/users/{self.u1_id}')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Edit Profile', html)
+            self.assertIn('Delete Profile', html)
+
+    def test_logged_out_profile(self):
+        """Test profile redirect when user is logged out"""
+        with self.client as c:
+            resp = c.get(f'/users/{self.u1_id}', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
+
+    def test_users_following(self):
+        """Test following list """
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            u1 = User.query.get(self.u1_id)
+            u2 = User.query.get(self.u2_id)
+            u1.following.append(u2)
+
+            resp = c.get(f'/users/{self.u1_id}/following')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u2', html)
+            self.assertIn('Unfollow', html)
+
+
+    def test_logged_out_following(self):
+        """Test following page redirect when user is logged out"""
+        with self.client as c:
+            resp = c.get(f'/users/{self.u1_id}/following', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
+
+
+    def test_users_followers(self):
+        """Test followers list """
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            u1 = User.query.get(self.u1_id)
+            u2 = User.query.get(self.u2_id)
+            u1.followers.append(u2)
+
+            resp = c.get(f'/users/{self.u1_id}/followers')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u2', html)
+            self.assertIn('Follow', html)
+
+    def test_logged_out_followers(self):
+        """Test followers page redirect when user is logged out"""
+        with self.client as c:
+            resp = c.get(f'/users/{self.u1_id}/followers', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
+
+    def test_follow_user(self):
+        """Test whether you can start following a user"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.post(f'/users/follow/{self.u2_id}', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            u1 = User.query.get(self.u1_id)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(len(u1.following), 1)
+            self.assertIn('@u2', html)
+            self.assertIn('Unfollow', html)
+
+    def test_follow_logged_out(self):
+        """Test add follower post request when user is logged out"""
+        with self.client as c:
+            resp = c.post(f'/users/follow/{self.u2_id}', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+
+            u1 = User.query.get(self.u1_id)
+            self.assertEqual(len(u1.following), 0)
+            self.assertIn("Access unauthorized", html)
+
+    def test_stop_following_user(self):
+        """Test whether you can remove follower when logged in"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            u1 = User.query.get(self.u1_id)
+            u2 = User.query.get(self.u2_id)
+            u1.following.append(u2)
+
+            self.assertEqual(len(u1.following), 1)
+            resp = c.post(f'/users/stop-following/{self.u2_id}', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(len(u1.following), 0)
+            self.assertNotIn('@u2', html)
+
+    def test_stop_following_logged_out(self):
+        with self.client as c:
+            u1 = User.query.get(self.u1_id)
+            u2 = User.query.get(self.u2_id)
+            u1.following.append(u2)
+
+            resp = c.post(f'/users/stop-following/{self.u2_id}', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
+            self.assertEqual(len(u1.following), 1)

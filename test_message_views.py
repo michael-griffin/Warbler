@@ -192,11 +192,6 @@ class LikeViewTestCase(MessageBaseViewTestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-        # #user 1 likes m3 (by user 2)
-        # message = Message.query.get(self.m3_id)
-        # user = User.query.get(self.u1_id)
-        # message.users_like.append(user)
-
         resp = c.post(f'/messages/{self.m3_id}/toggle-like', follow_redirects=True)
         html = resp.get_data(as_text=True)
 
@@ -211,7 +206,6 @@ class LikeViewTestCase(MessageBaseViewTestCase):
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u2_id
-
 
         resp = c.post(f'/messages/{self.m1_id}/toggle-like', follow_redirects=True)
         html = resp.get_data(as_text=True)

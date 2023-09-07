@@ -452,8 +452,8 @@ def add_header(response):
 ##############################################################################
 # Like routes:
 
-# TODO: message/msg-id/togglelike
-@app.post('/toggle-like/<int:msg_id>')
+
+@app.post('/messages/<int:msg_id>/toggle-like')
 def toggle_like(msg_id):
     """Toggle a like for current message"""
 

@@ -18,7 +18,8 @@ with open('generator/follows.csv') as follows:
 
 db.session.commit()
 
-like1 = Like.create_like(2, 322) #political red message by rgeorge
-like2 = Like.create_like(2, 200) #former hospital message by john05
+like1 = Like.create_like(1, 322) #political red message by rgeorge
+like2 = Like.create_like(2, 322) #politcal red message
+like3 = Like.create_like(2, 200) #former hospital message by john05
 
 db.session.commit()

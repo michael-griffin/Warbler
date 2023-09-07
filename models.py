@@ -185,6 +185,7 @@ class Message(db.Model):
     users_like = db.relationship('User', secondary="likes", backref="liked_messages")
 
 
+
 class Like(db.Model):
     """Model for likes"""
 
@@ -201,6 +202,10 @@ class Like(db.Model):
         db.ForeignKey('users.id'),
         primary_key=True
     )
+
+    #FIXME: may not need these, just trying queries for now.
+    # message = db.relationship("Message", backref="likes")
+    # user = db.relationship("User", backref="likes")
 
 
     @classmethod

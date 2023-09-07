@@ -60,14 +60,6 @@ def add_csrf():
     g.csrf_form = BlankForm()
 
 
-@app.before_request
-def check_url():
-    possible_url = request.url
-    possible_path = request.path
-
-    print(f'\n\n\n\n\n url is {possible_url} \n\n path is {possible_path}')
-    g.csrf_form = BlankForm()
-
 
 def do_login(user):
     """Log in user."""
@@ -311,7 +303,14 @@ def delete_user():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    Like.query.filter_by(user_id=g.user.id).delete()
+
+    #for each message in user's messages, we have message.likes, and delete
+    for message in g.user.messages:
+        Like.query.filter_by(message_id = message.id).delete()
+
     Message.query.filter_by(user_id=g.user.id).delete()
+
     db.session.delete(g.user)
     db.session.commit()
     do_logout()
@@ -380,6 +379,9 @@ def delete_message(message_id):
 
     msg = Message.query.get_or_404(message_id)
     if msg.user_id == g.user.id:
+
+        Like.query.filter_by(message_id = msg.id).delete()
+
         db.session.delete(msg)
         db.session.commit()
         flash('message deleted', "success")
@@ -415,8 +417,6 @@ def homepage():
         form = g.csrf_form
 
         liked_message_ids = [ message.id for message in g.user.liked_messages]
-
-        print(f'\n\n\n liked_message_ids {liked_message_ids}')
 
         return render_template('home.html',
                                liked_message_ids = liked_message_ids,

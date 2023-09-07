@@ -49,7 +49,6 @@ class UserModelTestCase(TestCase):
         """Confirm """
         u1 = User.query.get(self.u1_id)
 
-        # User should have no messages & no followers
         self.assertEqual(len(u1.messages), 0)
         self.assertEqual(len(u1.followers), 0)
 
@@ -64,8 +63,6 @@ class UserModelTestCase(TestCase):
         u1.following.append(u2)
         db.session.commit()
 
-        #check if is_following correctly returns true
-        #for user1 and 2
         self.assertEqual(u1.is_following(u2), True)
 
 
@@ -89,8 +86,6 @@ class UserModelTestCase(TestCase):
         self.assertTrue(bcrypt.check_password_hash(new_user.password, "password1"))
 
     def test_failed_signup(self):
-        #Do we need to worried about things
-        #caught by form validators, eg password length?
         try:
             bad_user = User.signup("jimbob", "jimbob@gmail.com")
         except TypeError as exc:

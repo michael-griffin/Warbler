@@ -433,3 +433,33 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Incorrect password', html)
+
+
+    def test_delete_user_success(self):
+        """Test deleting a user sucessfully while logged in"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.post('/users/delete', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Join Warbler today.', html)
+            self.assertEqual(len(User.query.all()), 1)
+            self.assertEqual(len(Message.query.all()), 0)
+            self.assertEqual(len(Like.query.all()), 0)
+
+    def test_delete_user_logged_out(self):
+        """Test a failed user delete request (when there is noone logged in)"""
+        with self.client as c:
+            resp = c.post('/users/delete', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('New to Warbler?', html)
+            self.assertIn('Access unauthorized', html)
+            self.assertEqual(len(User.query.all()), 2)
+            self.assertEqual(len(Message.query.all()), 2)
+
+

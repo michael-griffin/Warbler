@@ -188,8 +188,13 @@ def show_user(user_id):
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
+    messages = (Message
+                .query
+                .filter_by(user_id=user.id)
+                .order_by(Message.timestamp.desc())
+                .all())
 
-    return render_template('users/show.html', user=user, form=form)
+    return render_template('users/show.html', user=user, form=form, messages=messages)
 
 
 @app.get('/users/<int:user_id>/following')
@@ -364,7 +369,6 @@ def show_message(message_id):
 
 
 
-#TODO: once likes are implemented, may need to clear likes before clearing messages
 @app.post('/messages/<int:message_id>/delete')
 def delete_message(message_id):
     """Delete a message.

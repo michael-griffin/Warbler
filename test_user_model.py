@@ -8,8 +8,8 @@
 import os
 from unittest import TestCase
 
-from models import db, User, Message, Follow
-
+from models import db, bcrypt, User, Message, Follow
+from sqlalchemy.exc import IntegrityError
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
 # before we import our app, since that will have already
@@ -46,8 +46,58 @@ class UserModelTestCase(TestCase):
         db.session.rollback()
 
     def test_user_model(self):
+        """Confirm """
         u1 = User.query.get(self.u1_id)
 
         # User should have no messages & no followers
         self.assertEqual(len(u1.messages), 0)
         self.assertEqual(len(u1.followers), 0)
+
+
+    def test_is_following(self):
+        """Test whether is_following checks follower
+        status of user.following"""
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        self.assertEqual(u1.is_following(u2), False)
+        u1.following.append(u2)
+        db.session.commit()
+
+        #check if is_following correctly returns true
+        #for user1 and 2
+        self.assertEqual(u1.is_following(u2), True)
+
+
+    def test_is_followed_by(self):
+        """Test whether is_followed_by checks
+        follower status of user.followers"""
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        self.assertEqual(u1.is_followed_by(u2), False)
+        u1.followers.append(u2)
+        db.session.commit()
+
+        self.assertEqual(u1.is_followed_by(u2), True)
+
+    def test_user_signup(self):
+        """Test whether we can successfully make a new user with valid credentials"""
+
+        new_user = User.signup("jimbob", "jimbob@gmail.com", "password1")
+        db.session.commit()
+        self.assertTrue(bcrypt.check_password_hash(new_user.password, "password1"))
+
+    def test_failed_signup(self):
+        #Do we need to worried about things
+        #caught by form validators, eg password length?
+        try:
+            bad_user = User.signup("jimbob", "jimbob@gmail.com")
+        except TypeError as exc:
+            self.assertIsInstance(exc, TypeError)
+
+        duplicate_user = User.signup("u1", "u11@email.com", "password1", None)
+        self.assertRaises(IntegrityError, db.session.commit)
+
+
+    # def test_authenticate(self):

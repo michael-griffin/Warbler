@@ -55,12 +55,13 @@
             <div class="message-area">
               <a href="/users/{{ msg.user.id }}">@{{ msg.user.username }}</a>
               <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
-                {% if msg.id in liked_message_ids %}
-                  <i class="bi bi-star-fill"></i>
-                {% else %}
-                  <i class="bi bi-star"></i>
+                {% if msg.user_id != g.user.id %}
+                  {% if msg.id in liked_message_ids %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
                 {% endif %}
-
               <p>{{ msg.text }}</p>
             </div>
           </li>

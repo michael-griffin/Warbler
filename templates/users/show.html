@@ -20,6 +20,13 @@
               {{ message.timestamp.strftime('%d %B %Y') }}
             </span>
         <p>{{ message.text }}</p>
+        {% if message.user_id != g.user.id %}
+          {% if message.id in liked_message_ids %}
+            <i class="bi bi-star-fill"></i>
+          {% else %}
+            <i class="bi bi-star"></i>
+          {% endif %}
+        {% endif %}
       </div>
     </li>
 

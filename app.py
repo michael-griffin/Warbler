@@ -462,3 +462,21 @@ def toggle_like(msg_id):
 
     return redirect(f'/messages/{msg_id}')
 
+@app.get('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Show list of liked warbles of this user."""
+
+    form = g.csrf_form
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+    liked_message_ids = [m.id for m in user.liked_messages]
+
+    return render_template('users/likes.html',
+                           user=user,
+                           form=form,
+                           liked_message_ids=liked_message_ids,
+                           messages=user.liked_messages)

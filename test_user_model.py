@@ -1,14 +1,13 @@
 """User model tests."""
 
 # run these tests like:
-#
 #    python -m unittest test_user_model.py
 
 
 import os
 from unittest import TestCase
 
-from models import db, bcrypt, User, Message, Follow
+from models import db, bcrypt, User, Message, Follow, Like
 from sqlalchemy.exc import IntegrityError
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -31,6 +30,11 @@ db.create_all()
 
 class UserModelTestCase(TestCase):
     def setUp(self):
+        #TODO: Oddly, like delete and message delete need to be included here when
+        #running ALL test suites in succession for pytest. Regular unittest handled
+        #this fine, which was odd.
+        Like.query.delete()
+        Message.query.delete()
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
@@ -84,8 +88,11 @@ class UserModelTestCase(TestCase):
         new_user = User.signup("jimbob", "jimbob@gmail.com", "password1")
         db.session.commit()
         self.assertTrue(bcrypt.check_password_hash(new_user.password, "password1"))
+        #FIXME: check whether all fields of the user have been populated fully
+        #Possible tweak: check hash by checking first few characters: $2b
 
     def test_failed_signup(self):
+        """Test failed sign-ups from bad password/already taken username"""
         try:
             bad_user = User.signup("jimbob", "jimbob@gmail.com")
         except TypeError as exc:
@@ -97,17 +104,18 @@ class UserModelTestCase(TestCase):
 
     def test_authenticate_valid(self):
         """Test if authenticate returns user given valid credentials."""
-
         u1 = User.query.get(self.u1_id)
         user = User.authenticate(u1.username, "password")
 
         self.assertIsInstance(user, User)
+        #FIXME: stronger test, check whether user is u1 explicitly
+        #try assertEqual?
 
     def test_authenticate_invalid(self):
         """Test if authenticate returns False given invalid credentials."""
-        "u1", "u1@email.com", "password"
         u1 = User.query.get(self.u1_id)
 
+        #TODO: possible to split these into separate tests.
         login_attempt = User.authenticate("incorrect_username", "password")
         self.assertFalse(login_attempt)
 

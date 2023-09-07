@@ -123,6 +123,8 @@ class MessageShowViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("m1-text", html)
 
+            #TODO: Possible to remove/split off as 'test like status'
+            # this since it's somewhat unrelated to message body
             self.assertIn("Follow", html)
             self.assertIn("star-fill", html) #Check for filled star on message 1
 
@@ -133,7 +135,7 @@ class MessageShowViewTestCase(MessageBaseViewTestCase):
             self.assertNotIn("m1-text", html)
             self.assertIn('bi-star"', html) #Check for unfilled star on message 2
 
-    def dont_show_when_logged_out(self):
+    def test_dont_show_when_logged_out(self):
         """If there is no current logged in user, message details shouldn't be shown."""
         with self.client as c:
             url = f"/messages/{self.m1_id}"
@@ -163,7 +165,6 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(len(Like.query.all()), 0)
             self.assertIsNone(Message.query.get(self.m1_id))
 
-
     def test_fail_when_logged_out(self):
         """If there is no current logged in user, no messages should be deleted."""
         with self.client as c:
@@ -176,12 +177,6 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
 
             message = Message.query.get(self.m1_id)
             self.assertEqual(message.id, self.m1_id)
-
-
-
-
-
-
 
 
 

@@ -68,16 +68,14 @@ class MessageModelTestCase(TestCase):
         self.assertIsNotNone(m1.timestamp)
         self.assertEqual(m1.user_id, self.u1_id)
 
-
-
     def test_message_failure(self):
         """Test blank messages/no user attempts"""
-
         blank_message = Message(user_id = self.u1_id)
         db.session.add(blank_message)
         self.assertRaises(IntegrityError, db.session.commit)
         db.session.rollback()
 
+        #FIXME: can split this part into a separate test
         nouser_message = Message(text="beautiful text")
         db.session.add(nouser_message)
         self.assertRaises(IntegrityError, db.session.commit)
@@ -115,8 +113,3 @@ class MessageModelTestCase(TestCase):
         # duplicate = Like(user_id = self.u2_id, message_id = self.m1_id)
         # u2.liked_messages.append(duplicate)
 
-"""
-Test relationships user.messages, message.user
-test blank message/blank user
-test likes
-"""

@@ -96,7 +96,6 @@ class UserAuthViewTestCase(UserBaseViewTestCase):
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
-
             self.assertIn('@test_new_user', html)
             self.assertIn('Log out', html)
 
@@ -198,6 +197,7 @@ class UserAuthViewTestCase(UserBaseViewTestCase):
 
             self.assertEqual(resp.status_code, 401)
 
+#TODO: could split above into a separate file for user authentication
 
 
 class UserInfoViewTestCase(UserBaseViewTestCase):
@@ -271,7 +271,9 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
             self.assertIn('Access unauthorized', html)
             self.assertIn("New to Warbler?", html)
 
-
+    #FIXME: can migrate the following append part to the base test case.
+    #OR can make a child base test case that extends base, calls super,
+    #then adds followers
     def test_users_following(self):
         """Test following list """
         with self.client as c:

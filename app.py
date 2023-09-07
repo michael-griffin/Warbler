@@ -114,8 +114,9 @@ def signup():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     """Handle user login and redirect to homepage on success."""
+
     if g.user:
-        redirect('/')
+        return redirect('/')
 
     form = LoginForm()
 

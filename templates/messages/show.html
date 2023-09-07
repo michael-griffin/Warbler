@@ -43,12 +43,12 @@
           </div>
           <p class="single-message">{{ message.text }}</p>
           {% if g.user.id != message.user.id %}
-            <form action="../toggle-like/{{ message.id }}" method="POST">
+            <form class="d-inline" action="../toggle-like/{{ message.id }}" method="POST">
               {{ form.hidden_tag() }}
               {% if like %}
-                <button type=submit><i class="bi bi-star-fill"></i></button>
+                <button class="btn" type=submit><i class="bi bi-star-fill"></i></button>
               {% else %}
-                <button type=submit><i class="bi bi-star"></i></button>
+                <button class="btn" type=submit><i class="bi bi-star"></i></button>
               {% endif %}
             </form>
 

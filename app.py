@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import Unauthorized
@@ -460,7 +460,7 @@ def page_not_found(e):
 @app.post('/messages/<int:msg_id>/toggle-like')
 def toggle_like(msg_id):
     """Toggle a like for current message"""
-
+    print('\n\n\n\n got csrf here')
     form = g.csrf_form
 
     if not g.user or not form.validate_on_submit():
@@ -478,7 +478,13 @@ def toggle_like(msg_id):
         like = Like.create_like(user_id = g.user.id, message_id= msg_id)
         db.session.commit()
 
+
+    # return jsonify({'status': 'ok'})
     return redirect(f'/messages/{msg_id}')
+
+
+
+
 
 @app.get('/users/<int:user_id>/likes')
 def show_likes(user_id):

@@ -100,4 +100,21 @@ class UserModelTestCase(TestCase):
         self.assertRaises(IntegrityError, db.session.commit)
 
 
-    # def test_authenticate(self):
+    def test_authenticate_valid(self):
+        """Test if authenticate returns user given valid credentials."""
+
+        u1 = User.query.get(self.u1_id)
+        user = User.authenticate(u1.username, "password")
+
+        self.assertIsInstance(user, User)
+
+    def test_authenticate_invalid(self):
+        """Test if authenticate returns False given invalid credentials."""
+        "u1", "u1@email.com", "password"
+        u1 = User.query.get(self.u1_id)
+
+        login_attempt = User.authenticate("incorrect_username", "password")
+        self.assertFalse(login_attempt)
+
+        login_attempt = User.authenticate(u1.username, "bad_password")
+        self.assertFalse(login_attempt)

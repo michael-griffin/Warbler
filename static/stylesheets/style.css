@@ -407,6 +407,10 @@ p.card-bio {
   text-shadow: 0 0 8px #66757f;
 }
 
+.home-error {
+  background-image: url("https://th-thumbnailer.cdn-si-edu.com/yR0i9kkOM_RV6UNEdbcxpt9imZE=/fit-in/1072x0/https://tf-cmsv2-photocontest-smithsonianmag-prod-approved.s3.amazonaws.com/dad41f40-c5e9-4af2-8370-222da37343c7.jpg");
+}
+
 .home-hero .btn {
   text-shadow: none;
   position: relative;

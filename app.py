@@ -280,19 +280,25 @@ def profile():
     form = EditProfileForm(obj=g.user)
 
     if form.validate_on_submit():
-        if User.authenticate(g.user.username, form.password.data):
-            user = g.user
-            user.username = form.username.data
-            user.email = form.email.data
-            user.image_url = form.image_url.data or DEFAULT_IMAGE_URL
-            user.header_image_url = form.header_image_url.data or DEFAULT_HEADER_IMAGE_URL
-            user.bio = form.bio.data
+        try:
+            if User.authenticate(g.user.username, form.password.data):
+                user = g.user
+                user.username = form.username.data
+                user.email = form.email.data
+                user.image_url = form.image_url.data or DEFAULT_IMAGE_URL
+                user.header_image_url = form.header_image_url.data or DEFAULT_HEADER_IMAGE_URL
+                user.bio = form.bio.data
 
-            db.session.commit()
-            return redirect(f'/users/{g.user.id}')
-        else:
-            form.password.errors = ['Incorrect password']
-            return render_template('users/edit.html', user=g.user, form=form)
+                db.session.commit()
+                return redirect(f'/users/{g.user.id}')
+
+            else:
+                form.password.errors = ['Incorrect password']
+                return render_template('users/edit.html', user=g.user, form=form)
+
+        except IntegrityError:
+            db.session.rollback()
+            form.username.errors = ['Username already taken']
 
     return render_template('users/edit.html', user=g.user, form=form)
 

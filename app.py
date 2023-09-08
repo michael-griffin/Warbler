@@ -446,7 +446,11 @@ def add_header(response):
     response.cache_control.no_store = True
     return response
 
+@app.errorhandler(404)
+def page_not_found(e):
+    form = g.csrf_form
 
+    return render_template('404.html', form=form)
 
 
 ##############################################################################

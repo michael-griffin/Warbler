@@ -347,6 +347,7 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
             self.assertNotIn('@u2', html)
 
     def test_stop_following_logged_out(self):
+        """Test unfollow route when logged out."""
         with self.client as c:
             u1 = User.query.get(self.u1_id)
             u2 = User.query.get(self.u2_id)
@@ -358,3 +359,77 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
             self.assertEqual(len(u1.following), 1)
+
+    def test_show_user_profile(self):
+        """Test showing user profile to logged in user"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+            resp = c.get('/users/profile')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Edit your profile", html)
+            self.assertIn("u1", html)
+
+    def test_update_user_info(self):
+        """Test updating a user's information"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+            resp = c.post('/users/profile',
+                          data={
+                              'username' : 'u1',
+                              'email' : 'test.u1@email.com',
+                              'password' : 'password',
+                              'image_url' : '',
+                              'header_image_url' : '',
+                              'bio' : 'Test bio info change'
+                          },
+                          follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Test bio info change", html)
+
+            user = User.query.get(self.u1_id)
+            self.assertEqual(user.email, 'test.u1@email.com')
+            self.assertEqual(user.bio, 'Test bio info change')
+
+    def test_edit_user_name_taken(self):
+        """Test handling error when username is already taken"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+            resp = c.post('/users/profile',
+                          data={
+                              'username' : 'u2',
+                              'email' : 'u1@email.com',
+                              'password' : 'password',
+                              'image_url' : '',
+                              'header_image_url' : '',
+                              'bio' : ''
+                          })
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Username already taken', html)
+
+    def test_edit_user_route_bad_password(self):
+        """Test trying a bad password in user edit form"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+            resp = c.post('/users/profile',
+                          data={
+                              'username' : 'u1',
+                              'email' : 'u1@email.com',
+                              'password' : 'bad_password',
+                              'image_url' : '',
+                              'header_image_url' : '',
+                              'bio' : ''
+                          })
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Incorrect password', html)

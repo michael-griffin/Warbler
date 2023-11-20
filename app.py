@@ -25,24 +25,8 @@ app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 connect_db(app)
 
 
-
-# def get_csrf_form():
-#     if 'csrf_form' not in g:
-#         g.csrf_form = BlankForm()
-
-# @app.teardown_appcontext
-# def teardown_db(exception):
-#     csrf_form = g.pop('csrf_form', None)
-
-    # if csrf_form is not None:
-    #     csrf_form.close()
-
-# get_csrf_form()
-
 ##############################################################################
 # User signup/login/logout
-
-# g.csrf_form = get_csrf_form()
 
 
 @app.before_request

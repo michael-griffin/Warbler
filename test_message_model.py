@@ -75,7 +75,6 @@ class MessageModelTestCase(TestCase):
         self.assertRaises(IntegrityError, db.session.commit)
         db.session.rollback()
 
-        #FIXME: can split this part into a separate test
         nouser_message = Message(text="beautiful text")
         db.session.add(nouser_message)
         self.assertRaises(IntegrityError, db.session.commit)
@@ -109,7 +108,5 @@ class MessageModelTestCase(TestCase):
         duplicate_like = Like.create_like(user_id = self.u2_id, message_id = self.m1_id)
         self.assertRaises(IntegrityError, db.session.commit)
 
-        ###You can also imagine we did:
-        # duplicate = Like(user_id = self.u2_id, message_id = self.m1_id)
-        # u2.liked_messages.append(duplicate)
+
 

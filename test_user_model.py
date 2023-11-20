@@ -30,7 +30,7 @@ db.create_all()
 
 class UserModelTestCase(TestCase):
     def setUp(self):
-        #TODO: Oddly, like delete and message delete need to be included here when
+        #Oddly, like delete and message delete need to be included here when
         #running ALL test suites in succession for pytest. Regular unittest handled
         #this fine, which was odd.
         Like.query.delete()
@@ -88,8 +88,6 @@ class UserModelTestCase(TestCase):
         new_user = User.signup("jimbob", "jimbob@gmail.com", "password1")
         db.session.commit()
         self.assertTrue(bcrypt.check_password_hash(new_user.password, "password1"))
-        #FIXME: check whether all fields of the user have been populated fully
-        #Possible tweak: check hash by checking first few characters: $2b
 
     def test_failed_signup(self):
         """Test failed sign-ups from bad password/already taken username"""
@@ -107,15 +105,12 @@ class UserModelTestCase(TestCase):
         u1 = User.query.get(self.u1_id)
         user = User.authenticate(u1.username, "password")
 
-        self.assertIsInstance(user, User)
-        #FIXME: stronger test, check whether user is u1 explicitly
-        #try assertEqual?
+        self.assertEqual(user, u1)
 
     def test_authenticate_invalid(self):
         """Test if authenticate returns False given invalid credentials."""
         u1 = User.query.get(self.u1_id)
 
-        #TODO: possible to split these into separate tests.
         login_attempt = User.authenticate("incorrect_username", "password")
         self.assertFalse(login_attempt)
 

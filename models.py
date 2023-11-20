@@ -203,11 +203,6 @@ class Like(db.Model):
         primary_key=True
     )
 
-    #FIXME: may not need these, just trying queries for now.
-    # message = db.relationship("Message", backref="likes")
-    # user = db.relationship("User", backref="likes")
-
-
     @classmethod
     def create_like(cls, user_id, message_id):
         """Create liked message for user"""

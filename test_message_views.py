@@ -123,8 +123,6 @@ class MessageShowViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("m1-text", html)
 
-            #TODO: Possible to remove/split off as 'test like status'
-            # this since it's somewhat unrelated to message body
             self.assertIn("Follow", html)
             self.assertIn("star-fill", html) #Check for filled star on message 1
 
@@ -188,10 +186,14 @@ class LikeViewTestCase(MessageBaseViewTestCase):
                 sess[CURR_USER_KEY] = self.u1_id
 
         resp = c.post(f'/messages/{self.m3_id}/toggle-like', follow_redirects=True)
-        html = resp.get_data(as_text=True)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "ok")
+        ## Note: Pre AJAX, received html back with star class added/removed.
+        ## Now just getting back a status message.
+        # html = resp.get_data(as_text=True)
 
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn('star-fill', html)
+        # self.assertEqual(resp.status_code, 200)
+        # self.assertIn('star-fill', html)
 
         message = Message.query.get(self.m3_id)
         self.assertEqual(len(message.users_like), 1)
@@ -203,10 +205,16 @@ class LikeViewTestCase(MessageBaseViewTestCase):
                 sess[CURR_USER_KEY] = self.u2_id
 
         resp = c.post(f'/messages/{self.m1_id}/toggle-like', follow_redirects=True)
-        html = resp.get_data(as_text=True)
 
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("-star", html)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "ok")
+        ## Note: Pre AJAX, received html back with star class added/removed.
+        ## Now just getting back a status message.
+
+        # html = resp.get_data(as_text=True)
+
+        # self.assertEqual(resp.status_code, 200)
+        # self.assertIn("-star", html)
 
         message = Message.query.get(self.m1_id)
         self.assertEqual(len(message.users_like), 0)

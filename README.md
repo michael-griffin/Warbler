@@ -5,8 +5,8 @@ A twitter clone where users can like messages and follow other users.
 
 #### Login:
 
-**Username: guest**
-**Password: password**
+**Username: guest** <br>
+**Password: password** <br>
 
 
 ### Local Setup

@@ -16,7 +16,17 @@ CURR_USER_KEY = "curr_user"
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+## Use this line if local!
+#app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+
+#SQL Alchemy does not play nice with Heroku. See:
+#https://stackoverflow.com/questions/66690321/
+#flask-and-heroku-sqlalchemy-exc-nosuchmoduleerror-cant-load-plugin-sqlalchemy
+
+#Hacky workaround: Heroku does not let you edit the environment variables
+#of database you make using heroku addons:create
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://", 1)
+
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
